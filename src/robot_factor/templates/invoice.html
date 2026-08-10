@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>{{ document_title }} {{ invoice.number }}</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #18221b;
+      background: #fff;
+      direction: rtl;
+      font-family: Tahoma, "DejaVu Sans", Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.75;
+    }
+    .sheet { min-height: 277mm; border: 1px solid #d8e2da; border-radius: 14px; overflow: hidden; }
+    .accent { height: 8px; background: linear-gradient(90deg, #1f6b43, #c69a42); }
+    .content { padding: 22px 25px 20px; }
+    .header { display: grid; grid-template-columns: 1fr 1.5fr 1fr; align-items: center; gap: 16px; }
+    .logo { width: 72px; height: 72px; object-fit: contain; }
+    .brand-placeholder {
+      width: 68px; height: 68px; border-radius: 16px; background: #eff6f1; color: #1f6b43;
+      display: grid; place-items: center; font-weight: 700; font-size: 22px;
+    }
+    h1 { margin: 0; text-align: center; font-size: 24px; color: #153e2a; }
+    .brand { margin-top: 5px; text-align: center; color: #647069; font-size: 12px; }
+    .meta { text-align: left; direction: rtl; }
+    .meta div { margin: 2px 0; }
+    .label { color: #68746c; }
+    .value { font-weight: 700; }
+    .parties { margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { border: 1px solid #dce5de; border-radius: 10px; padding: 11px 13px; min-height: 94px; }
+    .card-title { color: #1f6b43; font-weight: 700; margin-bottom: 5px; }
+    .line { display: inline; margin-left: 12px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 18px; }
+    thead th { background: #1f6b43; color: #fff; font-weight: 600; padding: 8px 6px; }
+    thead th:first-child { border-radius: 0 8px 0 0; }
+    thead th:last-child { border-radius: 8px 0 0 0; }
+    tbody td { border-bottom: 1px solid #e0e8e2; padding: 9px 6px; text-align: center; }
+    tbody tr:nth-child(even) { background: #f8faf8; }
+    td.name { text-align: right; font-weight: 600; }
+    .summary { margin-top: 16px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; align-items: start; }
+    .notes, .payment { border: 1px solid #dce5de; border-radius: 10px; padding: 11px 13px; margin-bottom: 10px; }
+    .totals { border: 1px solid #dce5de; border-radius: 10px; overflow: hidden; }
+    .total-row { display: flex; justify-content: space-between; padding: 6px 11px; border-bottom: 1px solid #edf1ee; }
+    .total-row:last-child { border: 0; }
+    .grand { background: #eff6f1; color: #153e2a; font-size: 14px; font-weight: 700; padding: 10px 11px; }
+    .balance { color: #9a5a18; font-weight: 700; }
+    .signature { min-height: 70px; margin-top: 20px; display: flex; justify-content: flex-end; align-items: center; }
+    .stamp { max-width: 100px; max-height: 70px; object-fit: contain; }
+    .footer { margin-top: 15px; padding-top: 10px; border-top: 1px solid #dce5de; text-align: center; color: #6d7770; }
+    .ltr { direction: ltr; display: inline-block; }
+    .muted { color: #7b857e; }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <div class="accent"></div>
+    <div class="content">
+      <header class="header">
+        <div>
+          {% if logo_uri %}<img class="logo" src="{{ logo_uri }}" alt="لوگو">
+          {% else %}<div class="brand-placeholder">{{ company.brand_name[:1] }}</div>{% endif %}
+        </div>
+        <div>
+          <h1>{{ document_title }}</h1>
+          <div class="brand">{{ company.brand_name }}</div>
+        </div>
+        <div class="meta">
+          <div><span class="label">شماره:</span> <span class="value ltr">{{ invoice.number|fa }}</span></div>
+          <div><span class="label">تاریخ:</span> <span class="value ltr">{{ invoice.issue_at|jalali }}</span></div>
+          <div><span class="label">وضعیت:</span> <span class="value">{% if invoice.status == 'paid' %}پرداخت‌شده{% else %}نهایی{% endif %}</span></div>
+        </div>
+      </header>
+
+      <section class="parties">
+        <div class="card">
+          <div class="card-title">فروشنده</div>
+          <div class="line"><span class="label">نام:</span> {{ company.legal_name or company.brand_name }}</div>
+          {% if company.phone %}<div class="line"><span class="label">تلفن:</span> <span class="ltr">{{ company.phone|fa }}</span></div>{% endif %}
+          {% if company.national_id %}<div class="line"><span class="label">شناسه ملی:</span> <span class="ltr">{{ company.national_id|fa }}</span></div>{% endif %}
+          {% if company.address %}<div><span class="label">نشانی:</span> {{ company.address }}</div>{% endif %}
+        </div>
+        <div class="card">
+          <div class="card-title">خریدار</div>
+          <div class="line"><span class="label">نام:</span> {{ invoice.customer.display_name }}</div>
+          {% if invoice.customer.phone %}<div class="line"><span class="label">تلفن:</span> <span class="ltr">{{ invoice.customer.phone|fa }}</span></div>{% endif %}
+          {% if invoice.customer.national_id %}<div class="line"><span class="label">شناسه/کد ملی:</span> <span class="ltr">{{ invoice.customer.national_id|fa }}</span></div>{% endif %}
+          {% if invoice.customer.address %}<div><span class="label">نشانی:</span> {{ invoice.customer.address }}</div>{% endif %}
+        </div>
+      </section>
+
+      <table>
+        <thead><tr><th>ردیف</th><th>شرح کالا</th><th>مقدار</th><th>واحد</th><th>قیمت واحد</th><th>تخفیف</th><th>مالیات</th><th>مبلغ</th></tr></thead>
+        <tbody>
+          {% for item in invoice.items %}
+          <tr>
+            <td>{{ loop.index|fa }}</td>
+            <td class="name">{{ item.product_name }}{% if item.description %}<br><span class="muted">{{ item.description }}</span>{% endif %}</td>
+            <td>{{ item.quantity|qty }}</td>
+            <td>{{ item.unit }}</td>
+            <td>{{ item.unit_price|money }}</td>
+            <td>{{ ((item.item_discount or 0) + (item.allocated_invoice_discount or 0))|money }}</td>
+            <td>{{ item.tax_amount|money }}</td>
+            <td>{{ item.total_amount|money }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <section class="summary">
+        <div>
+          {% if invoice.notes %}<div class="notes"><span class="card-title">توضیحات و شرایط</span><br>{{ invoice.notes }}</div>{% endif %}
+          {% if company.card_number or company.iban %}
+          <div class="payment"><span class="card-title">اطلاعات پرداخت</span><br>
+            {% if company.card_number %}شماره کارت: <span class="ltr">{{ company.card_number|fa }}</span><br>{% endif %}
+            {% if company.iban %}شبا: <span class="ltr">{{ company.iban }}</span><br>{% endif %}
+            {% if company.account_holder %}به نام: {{ company.account_holder }}{% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="totals">
+          <div class="total-row"><span>جمع کالاها</span><span>{{ invoice.subtotal|money }} {{ company.money_unit }}</span></div>
+          <div class="total-row"><span>تخفیف کالاها</span><span>{{ invoice.item_discount_total|money }} {{ company.money_unit }}</span></div>
+          <div class="total-row"><span>تخفیف فاکتور</span><span>{{ invoice.invoice_discount|money }} {{ company.money_unit }}</span></div>
+          <div class="total-row"><span>مالیات</span><span>{{ invoice.tax_total|money }} {{ company.money_unit }}</span></div>
+          <div class="total-row"><span>حمل</span><span>{{ invoice.shipping_cost|money }} {{ company.money_unit }}</span></div>
+          <div class="total-row grand"><span>مبلغ نهایی</span><span>{{ invoice.grand_total|money }} {{ company.money_unit }}</span></div>
+          <div class="total-row"><span>پرداخت‌شده</span><span>{{ invoice.paid_amount|money }} {{ company.money_unit }}</span></div>
+          <div class="total-row balance"><span>مانده</span><span>{{ invoice.balance_due|money }} {{ company.money_unit }}</span></div>
+        </div>
+      </section>
+
+      <div class="signature">
+        {% if stamp_uri %}<img class="stamp" src="{{ stamp_uri }}" alt="مهر و امضا">{% else %}<span class="muted">مهر و امضای فروشنده</span>{% endif %}
+      </div>
+      <footer class="footer">
+        {% if company.footer_text %}{{ company.footer_text }}{% endif %}
+        {% if company.website %}<span class="ltr">{{ company.website }}</span>{% endif %}
+      </footer>
+    </div>
+  </main>
+</body>
+</html>
